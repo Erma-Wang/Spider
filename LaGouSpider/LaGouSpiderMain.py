@@ -2,43 +2,36 @@
 # -*- coding: utf-8 -*-
 
 import re, json
-from urllib import request
+from urllib import request, parse
 from pandas import DataFrame, Series
 import pandas as pd
 
-__author__ = "放养的小爬虫"
-
-# 处理字符串的函数
-def ProcessingString(string):
-    string = string.encode('utf-8')
-    string = str(string).replace(r'\x', '%').replace(r"'", "")
-    string = re.sub('^b', '', string)
-    return string
+__author__ = '放养的小爬虫'
 
 # 计算总共页数
 def SearchPageCount(position, city):
-    i = 0
-    type = 'true'
-    url = 'http://www.lagou.com/jobs/positionAjax.json?city='+city+'&first='+type+'&kd='+position+'&pn='+str(i+1)
+    url = 'http://www.lagou.com/jobs/positionAjax.json?'
+    params = {'city': city, 'kd': position}
+    url += parse.urlencode(params)
     with request.urlopen(url) as f:
         data = f.read()
-        count = int(json.loads(str(data, encoding='utf-8', errors='ignore'))["content"]["totalPageCount"])
-        totalCount = int(json.loads(str(data, encoding='utf-8', errors='ignore'))["content"]["totalCount"])
-        print('本次搜索到%d个职位'%totalCount)
+        content = json.loads(str(data, encoding='utf-8', errors='ignore'))['content']
+        count = int(content['totalPageCount'])
+        totalCount = int(content['totalCount'])
+        print('本次搜索到{0}个职位'.format(totalCount))
     return count
 
 def LaGouSpiderWithKeyWord(position, city):
-    positionTemp = ProcessingString(position)
-    cityTemp = ProcessingString(city)
     # 获取总共页数
-    pageCount = SearchPageCount(positionTemp, cityTemp)
+    pageCount = SearchPageCount(position, city)
+    if pageCount == 0:
+        print('抱歉！在您搜索的城市中没有您要找的职位')
+        return
 
     for i in range(0, pageCount):
-        if i == 0 :
-            type = 'true'
-        else:
-            type = 'false'
-        url = 'http://www.lagou.com/jobs/positionAjax.json?city='+cityTemp+'&first='+type+'&kd='+positionTemp+'&pn=1'
+        url = 'http://www.lagou.com/jobs/positionAjax.json?'
+        params = {'city': city, 'kd': position, 'pn': i+1}
+        url += parse.urlencode(params)
         data = request.urlopen(url).read()
     #     读取Json数据
         jsondata = json.loads(str(data, encoding='utf-8', errors='ignore'))['content']['result']
@@ -49,11 +42,8 @@ def LaGouSpiderWithKeyWord(position, city):
                 rdata = DataFrame(Series(data=jsondata[t])).T
             else:
                 rdata = pd.concat([rdata,DataFrame(Series(data=jsondata[t])).T])
-        if i == 0:
-            totaldata = rdata
-        else:
-            totaldata = pd.concat([totaldata, rdata])
-        print('正在解析第%d页...' % i)
+        totaldata = pd.concat([totaldata, rdata])
+        print('正在解析第{0}页...'.format(i+1))
     totaldata.to_excel('lagou.xls', sheet_name='sheet1')
 
 if __name__ == "__main__":
