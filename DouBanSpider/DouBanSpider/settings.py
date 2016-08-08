@@ -15,7 +15,7 @@ BOT_NAME = 'DouBanSpider'
 SPIDER_MODULES = ['DouBanSpider.spiders']
 NEWSPIDER_MODULE = 'DouBanSpider.spiders'
 
-ITEM_PIPELINES = ['DouBanSpider.pipelines.DoubanspiderPipeline']
+ITEM_PIPELINES = {'DouBanSpider.pipelines.DoubanspiderPipeline':1,}
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36'
